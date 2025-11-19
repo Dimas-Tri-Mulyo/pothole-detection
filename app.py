@@ -24,11 +24,11 @@ except Exception as e:
     st.error(f"Error memuat model: {e}. Pastikan file 'best.pt' ada di GitHub.")
 
 # --- DAFTAR VIDEO ---
-# Masukkan nama file video yang Anda punya di folder proyek Anda
 video_options = {
+    "Video Jalan 1 (video.mp4)": "video.mp4",   # <-- Tambahkan ini
     "Video Jalan 2 (video2.mp4)": "video2.mp4",
     "Video Jalan 3 (video3.mp4)": "video3.mp4",
-    # "Video Jalan 4 (video4.mp4)": "video4.mp4"  <-- Tambahkan jika ada
+    "Video Jalan 4 (video4.mp4)": "video4.mp4"  # <-- Tambahkan ini
 }
 
 # --- PILIH VIDEO ---
