@@ -9,7 +9,7 @@ st.title("🚗 Pothole Detection System (YOLOv8)")
 st.write("Upload video jalan raya untuk mendeteksi lubang secara otomatis.")
 
 # Sidebar untuk konfigurasi
-st.sidebar.title("Konfigurasi")
+st.sidebar.title("Pengaturan Deteksi")
 confidence = st.sidebar.slider("Confidence Threshold", 0.0, 1.0, 0.15, 0.05)
 
 # Load Model (Cache agar tidak load berulang kali)
@@ -35,7 +35,7 @@ if uploaded_file is not None:
 
     tracked_pothole_ids = set()
     frame_count = 0
-    FRAME_SKIP = 3
+    FRAME_SKIP = 5
 
     while cap.isOpened():
         ret, img = cap.read()
@@ -72,14 +72,24 @@ if uploaded_file is not None:
             cv2.putText(img, text_num, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 4)
             cv2.putText(img, text_num, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
 
+# ... kode sebelumnya ...
+
         # Update teks jumlah total
         st_text.markdown(f"### Total Lubang Terdeteksi: **{len(tracked_pothole_ids)}**")
         
-        # Konversi warna BGR (OpenCV) ke RGB (Browser)
+        # Konversi warna BGR ke RGB
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         
-        # Tampilkan di Web
-        st_frame.image(img, channels="RGB", use_column_width=True)
+        # <-- TAMBAHAN: Perkecil gambar tampilan biar internetnya ga berat
+        # Resize ke lebar 640 (tinggi menyesuaikan)
+        display_w = 640
+        h, w, _ = img.shape
+        ratio = display_w / w
+        display_h = int(h * ratio)
+        img_small = cv2.resize(img, (display_w, display_h))
+        
+        # Tampilkan gambar yang sudah diperkecil
+        st_frame.image(img_small, channels="RGB", use_column_width=True)
 
     cap.release()
-    os.remove(video_path) # Hapus file sementara
+    os.remove(video_path)
