@@ -7,7 +7,6 @@ import subprocess
 
 # Judul
 st.title("Pothole Detection System Computer Vision YOLOv8")
-st.write("Pilih video sampel yang tersedia di bawah ini untuk melihat demonstrasi deteksi.")
 
 # --- SIDEBAR PENGATURAN ---
 st.sidebar.header("⚙️ Pengaturan")
