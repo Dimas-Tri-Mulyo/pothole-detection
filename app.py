@@ -25,10 +25,10 @@ except Exception as e:
 
 # --- DAFTAR VIDEO ---
 video_options = {
-    "Video Jalan 1 (video.mp4)": "video.mp4",   # <-- Tambahkan ini
-    "Video Jalan 2 (video2.mp4)": "video2.mp4",
-    "Video Jalan 3 (video3.mp4)": "video3.mp4",
-    "Video Jalan 4 (video4.mp4)": "video4.mp4"  # <-- Tambahkan ini
+    "Jalan 1 (video.mp4)": "video.mp4",   
+    "Jalan 2 (video2.mp4)": "video2.mp4",
+    "Jalan 3 (video3.mp4)": "video3.mp4",
+    "Jalan 4 (video4.mp4)": "video4.mp4"  
 }
 
 # --- PILIH VIDEO ---
