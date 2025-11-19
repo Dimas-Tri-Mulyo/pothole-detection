@@ -34,14 +34,6 @@ video_options = {
 selected_video_name = st.selectbox("📂 Pilih Video Sampel:", list(video_options.keys()))
 selected_video_path = video_options[selected_video_name]
 
-# Tampilkan Preview Video Asli
-st.subheader("Preview Video Asli")
-if os.path.exists(selected_video_path):
-    st.video(selected_video_path)
-else:
-    st.error(f"File '{selected_video_path}' tidak ditemukan di GitHub! Harap upload dulu.")
-
-
 # --- FUNGSI KONVERSI VIDEO ---
 def convert_video(input_path, output_path):
     subprocess.call([
