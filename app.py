@@ -6,63 +6,77 @@ import os
 import subprocess
 
 # Judul
-st.title("🚗 Pothole Detection System (Final)")
-st.write("Upload video, tunggu proses, dan lihat hasil yang mulus.")
+st.title("🚗 Pothole Detection System (Demo)")
+st.write("Pilih video sampel yang tersedia di bawah ini untuk melihat demonstrasi deteksi.")
 
-# Konfigurasi Sidebar
+# --- SIDEBAR PENGATURAN ---
 st.sidebar.header("⚙️ Pengaturan")
-confidence = st.sidebar.slider("Tingkat Kepercayaan", 0.0, 1.0, 0.15, 0.05)
+confidence = st.sidebar.slider("Tingkat Kepercayaan (Confidence)", 0.0, 1.0, 0.2, 0.05)
 
-# Load Model
+# --- LOAD MODEL ---
 @st.cache_resource
 def load_model():
     return YOLO("best.pt")
 
-model = load_model()
+try:
+    model = load_model()
+except Exception as e:
+    st.error(f"Error memuat model: {e}. Pastikan file 'best.pt' ada di GitHub.")
 
-# Fungsi untuk konversi video agar bisa diputar di browser (H.264)
+# --- DAFTAR VIDEO ---
+# Masukkan nama file video yang Anda punya di folder proyek Anda
+video_options = {
+    "Video Jalan 2 (video2.mp4)": "video2.mp4",
+    "Video Jalan 3 (video3.mp4)": "video3.mp4",
+    # "Video Jalan 4 (video4.mp4)": "video4.mp4"  <-- Tambahkan jika ada
+}
+
+# --- PILIH VIDEO ---
+selected_video_name = st.selectbox("📂 Pilih Video Sampel:", list(video_options.keys()))
+selected_video_path = video_options[selected_video_name]
+
+# Tampilkan Preview Video Asli
+st.subheader("Preview Video Asli")
+if os.path.exists(selected_video_path):
+    st.video(selected_video_path)
+else:
+    st.error(f"File '{selected_video_path}' tidak ditemukan di GitHub! Harap upload dulu.")
+
+
+# --- FUNGSI KONVERSI VIDEO ---
 def convert_video(input_path, output_path):
-    # Menggunakan FFmpeg yang sudah diinstal lewat packages.txt
     subprocess.call([
         'ffmpeg', '-y', '-i', input_path, '-vcodec', 'libx264', output_path
     ])
 
-# Upload File
-uploaded_file = st.file_uploader("Pilih file video...", type=["mp4", "mov", "avi"])
-
-if uploaded_file is not None:
-    # Simpan file input sementara
-    tfile = tempfile.NamedTemporaryFile(delete=False)
-    tfile.write(uploaded_file.read())
-    video_path = tfile.name
-
-    # Tombol untuk memulai
-    if st.button("🎬 Mulai Proses Deteksi"):
+# --- TOMBOL MULAI ---
+if st.button("🚀 Mulai Proses Deteksi", type="primary"):
+    
+    if not os.path.exists(selected_video_path):
+        st.error("Video tidak ditemukan. Pastikan file video sudah di-push ke GitHub.")
+    else:
+        cap = cv2.VideoCapture(selected_video_path)
         
-        cap = cv2.VideoCapture(video_path)
-        
-        # Siapkan file output sementara
+        # Siapkan output
         output_temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4')
         output_path = output_temp_file.name
         
-        # Ambil info video asli
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         fps = int(cap.get(cv2.CAP_PROP_FPS))
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
-        # Penulis Video (VideoWriter)
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
 
-        # Progress Bar
+        # UI Progress
         progress_bar = st.progress(0)
         status_text = st.empty()
         
         tracked_pothole_ids = set()
         frame_index = 0
         
-        # Loop Processing (Tanpa Tampilan Live biar Cepat)
+        # Loop Proses
         while cap.isOpened():
             ret, img = cap.read()
             if not ret:
@@ -81,51 +95,45 @@ if uploaded_file is not None:
                     x, y, x1, y1 = box
                     frame_detections.append(([int(x), int(y), int(x1), int(y1)]))
 
-            # Gambar Hasil
+            # Gambar
             frame_detections.sort(key=lambda x: x[0])
             for index, box_coords in enumerate(frame_detections):
                 pothole_number_in_frame = index + 1
                 x, y, x1, y1 = box_coords
                 
                 cv2.rectangle(img, (x, y), (x1, y1), (255, 0, 0), 2)
-                
-                # Teks Nomor (Outline + Isi)
                 cv2.putText(img, str(pothole_number_in_frame), (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 4)
                 cv2.putText(img, str(pothole_number_in_frame), (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
 
-            # Teks Total (Outline + Isi)
+            # Teks Total
             total_text = f"Total Lubang: {len(tracked_pothole_ids)}"
             cv2.putText(img, total_text, (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 5)
             cv2.putText(img, total_text, (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
 
-            # Simpan frame ke video output
             out.write(img)
             
-            # Update Progress Bar
             frame_index += 1
-            progress = min(frame_index / total_frames, 1.0)
-            progress_bar.progress(progress)
-            status_text.text(f"Memproses Frame {frame_index}/{total_frames}...")
-
+            if total_frames > 0:
+                progress = min(frame_index / total_frames, 1.0)
+                progress_bar.progress(progress)
+            
         cap.release()
         out.release()
         
-        status_text.text("Sedang mengonversi video agar kompatibel dengan browser...")
+        status_text.text("Sedang finalisasi video...")
         
-        # Konversi ke format yang ramah browser
+        # Konversi FFmpeg
         final_output_path = output_path.replace('.mp4', '_fixed.mp4')
         convert_video(output_path, final_output_path)
 
-        status_text.success("Selesai! Silakan putar video di bawah.")
+        status_text.success("Selesai!")
         progress_bar.empty()
 
-        # Tampilkan Video Hasil Akhir
+        # Tampilkan Hasil
+        st.subheader("Hasil Deteksi")
         st.video(final_output_path)
         
-        # Tampilkan Statistik Akhir
         st.info(f"Jumlah Total Lubang Unik Terdeteksi: {len(tracked_pothole_ids)}")
 
-        # Bersihkan file
-        os.remove(video_path)
-        os.remove(output_path)
-        # os.remove(final_output_path) # Jangan hapus ini dulu agar bisa ditonton
+        # Bersihkan
+        if os.path.exists(output_path): os.remove(output_path)
